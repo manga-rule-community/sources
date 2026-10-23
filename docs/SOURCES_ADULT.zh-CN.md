@@ -2,7 +2,7 @@
 
 # 成人来源目录
 
-[English](SOURCES_ADULT.md) | **简体中文**
+[English](SOURCES_ADULT.md) | **简体中文** | [日本語](SOURCES_ADULT.ja.md)
 
 [返回常规目录](../SOURCES.zh-CN.md) | [返回 README](../README.zh-CN.md)
 

@@ -2,7 +2,7 @@
 
 # Adult Source Directory
 
-**English** | [简体中文](SOURCES_ADULT.zh-CN.md)
+**English** | [简体中文](SOURCES_ADULT.zh-CN.md) | [日本語](SOURCES_ADULT.ja.md)
 
 [Back to regular sources](../SOURCES.md) | [Back to README](../README.md)
 

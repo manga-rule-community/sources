@@ -2,7 +2,7 @@
 
 # 单源规则目录
 
-[English](SOURCES.md) | **简体中文**
+[English](SOURCES.md) | **简体中文** | [日本語](SOURCES.ja.md)
 
 [返回 README](README.zh-CN.md) | [成人来源单独目录](docs/SOURCES_ADULT.zh-CN.md)
 

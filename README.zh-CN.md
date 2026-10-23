@@ -1,6 +1,6 @@
 # Community Rule Sources
 
-[English](README.md) | **简体中文**
+[English](README.md) | **简体中文** | [日本語](README.ja.md)
 
 本仓库由社区成员维护，提供可供兼容阅读器（包括 KiokuYomi）导入的可选加密规则集合，
 通过 GitHub Releases 分发。

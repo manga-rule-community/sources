@@ -1,6 +1,6 @@
 # Community Rule Sources
 
-**English** | [简体中文](README.zh-CN.md)
+**English** | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
 This community-maintained repository distributes optional encrypted rule collections
 through GitHub Releases for compatible readers, including KiokuYomi.

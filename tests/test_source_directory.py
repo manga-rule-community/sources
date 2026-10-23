@@ -204,18 +204,24 @@ class SourceDirectoryTests(unittest.TestCase):
         self.assertIn("[成人来源单独目录](docs/SOURCES_ADULT.zh-CN.md)", documents[chinese["general"]])
         self.assertIn("[返回常规目录](../SOURCES.zh-CN.md)", documents[chinese["adult"]])
         self.assertIn("[返回 README](../README.zh-CN.md)", documents[chinese["adult"]])
+        japanese = d.DOCUMENT_PATHS["ja"]
+        self.assertIn("[README に戻る](README.ja.md)", documents[japanese["general"]])
+        self.assertIn("[成人向けソースの別一覧](docs/SOURCES_ADULT.ja.md)", documents[japanese["general"]])
+        self.assertIn("[通常ソース一覧に戻る](../SOURCES.ja.md)", documents[japanese["adult"]])
+        self.assertIn("[README に戻る](../README.ja.md)", documents[japanese["adult"]])
 
     def test_default_documents_and_renderer_are_english(self):
         documents = self.documents()
         self.assertEqual(set(documents), {
             Path("SOURCES.md"), Path("docs/SOURCES_ADULT.md"),
             Path("SOURCES.zh-CN.md"), Path("docs/SOURCES_ADULT.zh-CN.md"),
+            Path("SOURCES.ja.md"), Path("docs/SOURCES_ADULT.ja.md"),
         })
         for path, title in ((d.GENERAL_PATH, "Individual Source Directory"), (d.ADULT_PATH, "Adult Source Directory")):
             text = documents[path]
             self.assertIn(f"# {title}", text)
             self.assertIn("**English** | [简体中文]", text)
-            self.assertNotRegex(text.replace("简体中文", ""), r"[\u4e00-\u9fff]")
+            self.assertNotRegex(text.replace("简体中文", "").replace("日本語", ""), r"[\u4e00-\u9fff]")
         self.assertEqual(
             d.render_directory(self.general, self.general["rules"], adult=False, other_count=1),
             documents[d.GENERAL_PATH],
@@ -225,12 +231,13 @@ class SourceDirectoryTests(unittest.TestCase):
         documents = self.documents()
         for channel in ("general", "adult"):
             english = documents[d.DOCUMENT_PATHS["en"][channel]]
-            chinese = documents[d.DOCUMENT_PATHS["zh-CN"][channel]]
-            self.assertEqual(re.findall(r"\| `([^`]+)` \|", english), re.findall(r"\| `([^`]+)` \|", chinese))
-            self.assertEqual(re.findall(r"\]\((https://[^)]+\.kyyrule)\)", english),
-                             re.findall(r"\]\((https://[^)]+\.kyyrule)\)", chinese))
-            self.assertIn("`rules-test-39`", chinese)
-            self.assertIn("`39`", chinese)
+            for language in ("zh-CN", "ja"):
+                localized = documents[d.DOCUMENT_PATHS[language][channel]]
+                self.assertEqual(re.findall(r"\| `([^`]+)` \|", english), re.findall(r"\| `([^`]+)` \|", localized))
+                self.assertEqual(re.findall(r"\]\((https://[^)]+\.kyyrule)\)", english),
+                                 re.findall(r"\]\((https://[^)]+\.kyyrule)\)", localized))
+                self.assertIn("`rules-test-39`", localized)
+                self.assertIn("`39`", localized)
         general = documents[d.DOCUMENT_PATHS["zh-CN"]["general"]]
         self.assertIn("本页共 1 个常规来源", general)
         self.assertIn("另有 1 个成人来源", general)
@@ -239,33 +246,68 @@ class SourceDirectoryTests(unittest.TestCase):
     def test_translation_keys_types_and_placeholders_match(self):
         formatter = string.Formatter()
 
-        def compare(english, chinese):
-            self.assertEqual(type(english), type(chinese))
+        def compare(english, localized):
+            self.assertEqual(type(english), type(localized))
             if isinstance(english, dict):
-                self.assertEqual(english.keys(), chinese.keys())
+                self.assertEqual(english.keys(), localized.keys())
                 for key in english:
-                    compare(english[key], chinese[key])
+                    compare(english[key], localized[key])
             elif isinstance(english, list):
-                self.assertEqual(len(english), len(chinese))
-                for first, second in zip(english, chinese):
+                self.assertEqual(len(english), len(localized))
+                for first, second in zip(english, localized):
                     compare(first, second)
             else:
                 self.assertEqual({field for _, field, _, _ in formatter.parse(english) if field},
-                                 {field for _, field, _, _ in formatter.parse(chinese) if field})
+                                 {field for _, field, _, _ in formatter.parse(localized) if field})
 
-        compare(d.TEXT["en"], d.TEXT["zh-CN"])
+        for language in ("zh-CN", "ja"):
+            with self.subTest(language=language):
+                compare(d.TEXT["en"], d.TEXT[language])
+
+    def test_language_registries_include_japanese_and_keep_english_first(self):
+        self.assertEqual(d.LANGUAGE_NAMES, {"en": "English", "zh-CN": "简体中文", "ja": "日本語"})
+        self.assertEqual(list(d.LANGUAGE_NAMES), ["en", "zh-CN", "ja"])
+        self.assertEqual(d.LANGUAGE_NAMES.keys(), d.DOCUMENT_PATHS.keys())
+        self.assertEqual(d.LANGUAGE_NAMES.keys(), d.TEXT.keys())
+
+    def test_japanese_directory_localizes_ui_without_translating_source_names(self):
+        self.all["rules"][0]["name"] = "日本のソース"
+        self.repartition()
+        documents = self.documents()
+        general = documents[d.DOCUMENT_PATHS["ja"]["general"]]
+        adult = documents[d.DOCUMENT_PATHS["ja"]["adult"]]
+        self.assertIn("# 個別ソース一覧", general)
+        self.assertIn("通常ソースを 1 件", general)
+        self.assertIn("| ソース名 | ルール ID |", general)
+        self.assertIn("[インポート用リンク]", general)
+        self.assertIn("[このバージョンをダウンロード]", general)
+        self.assertIn("**日本語**", general)
+        self.assertNotIn("restricted", general)
+        self.assertIn("適用される年齢要件", adult)
+        for paths in d.DOCUMENT_PATHS.values():
+            self.assertIn("| 日本のソース | `sample` |", documents[paths["general"]])
 
     def test_every_page_has_a_reciprocal_language_switch(self):
         documents = self.documents()
-        for name in ("README.md", "README.zh-CN.md", "docs/DEVELOPMENT.md", "docs/DEVELOPMENT.zh-CN.md"):
+        for name in ("README.md", "README.zh-CN.md", "README.ja.md",
+                     "docs/DEVELOPMENT.md", "docs/DEVELOPMENT.zh-CN.md", "docs/DEVELOPMENT.ja.md"):
             documents[Path(name)] = (ROOT / name).read_text()
-        self.assertEqual(len(documents), 8)
+        self.assertEqual(len(documents), 12)
+
+        def locale(path):
+            return next((code for code in ("zh-CN", "ja") if path.name.endswith(f".{code}.md")), "en")
+
         for current, text in documents.items():
-            chinese = ".zh-CN.md" in current.name
-            other_name = current.name.replace(".zh-CN.md", ".md") if chinese else current.stem + ".zh-CN.md"
-            other = current.with_name(other_name)
-            self.assertIn(other, documents)
-            switch = f"[English]({other_name}) | **简体中文**" if chinese else f"**English** | [简体中文]({other_name})"
+            language = locale(current)
+            basename = current.stem if language == "en" else current.name.removesuffix(f".{language}.md")
+            counterparts = {}
+            links = []
+            for code, label in d.LANGUAGE_NAMES.items():
+                name = basename + (".md" if code == "en" else f".{code}.md")
+                counterparts[code] = current.with_name(name)
+                self.assertIn(counterparts[code], documents)
+                links.append(f"**{label}**" if code == language else f"[{label}]({name})")
+            switch = " | ".join(links)
             self.assertIn(switch, text)
             self.assertLess(text.index(switch), text.index("\n## "))
             for target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", text):
@@ -273,8 +315,8 @@ class SourceDirectoryTests(unittest.TestCase):
                     continue
                 resolved = (ROOT / current.parent / target).resolve().relative_to(ROOT)
                 self.assertIn(resolved, documents)
-                if resolved != other:
-                    self.assertEqual(".zh-CN.md" in resolved.name, chinese, (current, target))
+                if resolved not in counterparts.values():
+                    self.assertEqual(locale(resolved), language, (current, target))
 
     def test_cli_check_exit_status_and_explicit_preview_directory(self):
         command = [sys.executable, str(ROOT / "scripts/generate_source_directory.py"),
@@ -298,7 +340,8 @@ class SourceDirectoryTests(unittest.TestCase):
         stage_line = next(line.strip() for line in joined.splitlines() if "git add --" in line)
         self.assertEqual(shlex.split(stage_line)[3:], [
             "all.json", "general.json", "sources.json", "publication.json",
-            "SOURCES.md", "SOURCES.zh-CN.md", "docs/SOURCES_ADULT.md", "docs/SOURCES_ADULT.zh-CN.md",
+            "SOURCES.md", "SOURCES.zh-CN.md", "SOURCES.ja.md",
+            "docs/SOURCES_ADULT.md", "docs/SOURCES_ADULT.zh-CN.md", "docs/SOURCES_ADULT.ja.md",
         ])
         self.assertLess(workflow.index("--output dist --publish"), workflow.index(generate))
         self.assertLess(workflow.index(generate), workflow.index('cp "dist/$file" "$file"'))

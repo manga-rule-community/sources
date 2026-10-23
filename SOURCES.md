@@ -2,7 +2,7 @@
 
 # Individual Source Directory
 
-**English** | [简体中文](SOURCES.zh-CN.md)
+**English** | [简体中文](SOURCES.zh-CN.md) | [日本語](SOURCES.ja.md)
 
 [Back to README](README.md) | [Separate adult directory](docs/SOURCES_ADULT.md)
 
