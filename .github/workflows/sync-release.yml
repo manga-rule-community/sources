@@ -25,22 +25,26 @@ jobs:
           python-version: "3.12"
       - name: Test publisher safety boundaries
         run: python3 -m unittest discover -s tests -v
+      - name: Check committed source directories
+        run: python3 scripts/generate_source_directory.py --check
       - name: Prepare, upload draft, verify digests, then publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/mirror_release.py --output dist --publish
-      - name: Update subscription pointers only after verified publication
+      - name: Update subscription pointers and directories only after verified publication
         run: |
           set -euo pipefail
+          python3 scripts/generate_source_directory.py --catalog-dir dist
           for file in all.json general.json sources.json publication.json; do
             cp "dist/$file" "$file"
           done
-          git add -- all.json general.json sources.json publication.json
+          python3 scripts/generate_source_directory.py --check
+          git add -- all.json general.json sources.json publication.json SOURCES.md docs/SOURCES_ADULT.md
           if git diff --cached --quiet; then
-            echo "Subscriptions already current."
+            echo "Subscriptions and source directories already current."
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Sync verified encrypted rule release'
+          git commit -m 'Sync verified encrypted rule release and source directories'
           git push origin HEAD:main

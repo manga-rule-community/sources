@@ -3,9 +3,9 @@ name: Test distribution tooling
 on:
   push:
     branches: [main]
-    paths: ['scripts/**', 'tests/**', '.github/workflows/**']
+    paths: ['scripts/**', 'tests/**', '.github/workflows/**', '*.json', '*.md', 'docs/**']
   pull_request:
-    paths: ['scripts/**', 'tests/**', '.github/workflows/**']
+    paths: ['scripts/**', 'tests/**', '.github/workflows/**', '*.json', '*.md', 'docs/**']
 
 permissions:
   contents: read
@@ -19,3 +19,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: python3 -m unittest discover -s tests -v
+      - run: python3 scripts/generate_source_directory.py --check
