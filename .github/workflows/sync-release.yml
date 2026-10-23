@@ -39,7 +39,8 @@ jobs:
             cp "dist/$file" "$file"
           done
           python3 scripts/generate_source_directory.py --check
-          git add -- all.json general.json sources.json publication.json SOURCES.md docs/SOURCES_ADULT.md
+          git add -- all.json general.json sources.json publication.json \
+            SOURCES.md SOURCES.zh-CN.md docs/SOURCES_ADULT.md docs/SOURCES_ADULT.zh-CN.md
           if git diff --cached --quiet; then
             echo "Subscriptions and source directories already current."
             exit 0
